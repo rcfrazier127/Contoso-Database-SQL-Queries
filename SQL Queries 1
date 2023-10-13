@@ -1,0 +1,48 @@
+1) Retrieve the top 10 customers with the highest total sales amount:
+
+SELECT TOP 10 c.CustomerName, SUM(s.SalesAmount) AS TotalSalesAmount
+FROM dbo.FactSales s
+INNER JOIN dbo.DimCustomer c ON s.CustomerKey = c.CustomerKey
+GROUP BY c.CustomerName
+ORDER BY TotalSalesAmount DESC;
+
+------------------------------------------------------------------------------------------------------------------------------------------------------
+2) List the product categories that have no sales:
+
+SELECT pc.ProductCategoryName
+FROM dbo.DimProductCategory pc
+LEFT JOIN dbo.DimProduct p ON pc.ProductCategoryKey = p.ProductCategoryKey
+LEFT JOIN dbo.FactSales s ON p.ProductKey = s.ProductKey
+WHERE s.SalesKey IS NULL;
+
+------------------------------------------------------------------------------------------------------------------------------------------------------
+3) Compute the 3-month moving average of sales for a specific product:
+
+SELECT s.DateKey, p.ProductName, s.SalesAmount,
+AVG(s.SalesAmount) OVER (PARTITION BY p.ProductKey ORDER BY s.DateKey ROWS BETWEEN 2 PRECEDING AND CURRENT ROW) AS MovingAverage
+FROM dbo.FactSales s
+INNER JOIN dbo.DimProduct p ON s.ProductKey = p.ProductKey
+WHERE p.ProductName = 'YourProduct';
+
+------------------------------------------------------------------------------------------------------------------------------------------------------
+4) Determine the top 5 most profitable products within each product category:
+
+WITH RankedProducts AS (
+  SELECT p.ProductName, pc.ProductCategoryName, s.SalesAmount - p.Cost AS Profit,
+  ROW_NUMBER() OVER (PARTITION BY pc.ProductCategoryName ORDER BY s.SalesAmount - p.Cost DESC) AS Ranking
+  FROM dbo.FactSales s
+  INNER JOIN dbo.DimProduct p ON s.ProductKey = p.ProductKey
+  INNER JOIN dbo.DimProductCategory pc ON p.ProductCategoryKey = pc.ProductCategoryKey
+)
+SELECT ProductCategoryName, ProductName, Profit
+FROM RankedProducts
+WHERE Ranking <= 5;
+
+------------------------------------------------------------------------------------------------------------------------------------------------------
+5) List customers who have made purchases on at least 20 different days:
+
+SELECT c.CustomerName, COUNT(DISTINCT s.DateKey) AS PurchaseDays
+FROM dbo.FactSales s
+INNER JOIN dbo.DimCustomer c ON s.CustomerKey = c.CustomerKey
+GROUP BY c.CustomerName
+HAVING COUNT(DISTINCT s.DateKey) >= 20;
