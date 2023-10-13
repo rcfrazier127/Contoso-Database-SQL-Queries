@@ -22,7 +22,7 @@ SELECT s.DateKey, p.ProductName, s.SalesAmount,
 AVG(s.SalesAmount) OVER (PARTITION BY p.ProductKey ORDER BY s.DateKey ROWS BETWEEN 2 PRECEDING AND CURRENT ROW) AS MovingAverage
 FROM dbo.FactSales s
 INNER JOIN dbo.DimProduct p ON s.ProductKey = p.ProductKey
-WHERE p.ProductName = 'YourProduct';
+WHERE p.ProductName = 'Adventure Works 20" CRT TV E15 Silver';
 
 ------------------------------------------------------------------------------------------------------------------------------------------------------
 4) Determine the top 5 most profitable products within each product category:
