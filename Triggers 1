@@ -1,0 +1,52 @@
+--------------------------------------------------------------------------------------------------------------------------
+1. Audit trail trigger for product price changes:
+
+CREATE TRIGGER PriceChangeAudit
+ON Products
+AFTER UPDATE
+AS
+BEGIN
+    INSERT INTO PriceChangeHistory (ProductID, OldPrice, NewPrice, ChangeDate)
+    SELECT d.ProductID, i.Price AS OldPrice, d.Price AS NewPrice, GETDATE()
+    FROM inserted i
+    JOIN deleted d ON i.ProductID = d.ProductID
+    WHERE i.Price <> d.Price;
+END
+
+--------------------------------------------------------------------------------------------------------------------------
+2. Updating customer status after order placement:
+
+CREATE TRIGGER UpdateCustomerStatus
+ON Orders
+AFTER INSERT
+AS
+BEGIN
+    UPDATE Customers
+    SET Status = 'Active'
+    WHERE CustomerID IN (SELECT CustomerID FROM inserted);
+END
+
+--------------------------------------------------------------------------------------------------------------------------
+3. Deny deletion of products with active orders:
+
+CREATE TRIGGER PreventProductDeletion
+ON Products
+INSTEAD OF DELETE
+AS
+BEGIN
+    IF EXISTS (
+        SELECT 1
+        FROM deleted d
+        JOIN OrderDetails od ON d.ProductID = od.ProductID
+    )
+    BEGIN
+        RAISERROR ('Cannot delete product with active orders.', 16, 1)
+        ROLLBACK TRANSACTION
+    END
+    ELSE
+    BEGIN
+        DELETE FROM Products WHERE ProductID IN (SELECT ProductID FROM deleted)
+    END
+END
+
+--------------------------------------------------------------------------------------------------------------------------
