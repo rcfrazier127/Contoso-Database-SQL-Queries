@@ -1,0 +1,60 @@
+
+----------------------------------------------------------------------------------------------------------
+1. Calculating total sales for a specific product category:
+
+CREATE PROCEDURE CalculateTotalSalesForCategory
+    @CategoryName NVARCHAR(50)
+AS
+BEGIN
+    SELECT SUM(SalesAmount) AS TotalSales
+    FROM Sales
+    WHERE ProductID IN (SELECT ProductID FROM Products WHERE CategoryName = @CategoryName);
+END
+
+----------------------------------------------------------------------------------------------------------
+2. Retrieving top N customers by total purchases:
+
+CREATE PROCEDURE GetTopCustomers
+    @TopN INT
+AS
+BEGIN
+    SELECT TOP (@TopN) CustomerID, SUM(SalesAmount) AS TotalPurchases
+    FROM Sales
+    GROUP BY CustomerID
+    ORDER BY TotalPurchases DESC;
+END
+
+----------------------------------------------------------------------------------------------------------
+3. Updating product prices by percentage:
+
+CREATE PROCEDURE UpdateProductPrices
+    @Percentage DECIMAL(5,2)
+AS
+BEGIN
+    UPDATE Products
+    SET Price = Price * (1 + (@Percentage / 100));
+END
+
+----------------------------------------------------------------------------------------------------------
+4. Calculating the average order value for each customer:
+
+CREATE PROCEDURE CalculateAvgOrderValue
+AS
+BEGIN
+    SELECT CustomerID, AVG(SalesAmount) AS AvgOrderValue
+    FROM Sales
+    GROUP BY CustomerID;
+END
+
+----------------------------------------------------------------------------------------------------------
+5. Deleting inactive customers with no orders:
+
+CREATE PROCEDURE DeleteInactiveCustomersWithNoOrders
+AS
+BEGIN
+    DELETE FROM Customers
+    WHERE CustomerID NOT IN (SELECT DISTINCT CustomerID FROM Sales)
+    AND LastActivityDate < DATEADD(MONTH, -6, GETDATE());
+END
+
+----------------------------------------------------------------------------------------------------------
